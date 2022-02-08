@@ -149,9 +149,12 @@ class AbbyTraining(Measurement):
 
         print('================== Trial Types =================')
         print(trialtypes)
+        t0 = time.time()
         for t in range (0, self.numtrials):
+            t1 = time.time()
             print('================================================')
             print('trial number: ', t)
+            print('time: ', t1-t0)
 
             d = self.ws1.cell(row=(self.ws1.max_row + 1), column=1, value=time.time())
             d = self.ws1.cell(row=self.ws1.max_row, column=2, value=101)  # trial start
@@ -204,13 +207,12 @@ class AbbyTraining(Measurement):
        # while time.time() < action_timeout:
         if self.operant and count >= self.licknum:
             print('licking activate reward')
-            return reward_on
         elif self.operant and count < self.licknum:
             print('not enough licking')
             reward_on = False
         elif not self.operant:
             print('free water')
-            return reward_on
+        return reward_on
 
 
 
@@ -302,8 +304,8 @@ class AbbyTraining(Measurement):
             #self.determine_reward_lickUnlimited(self.duration_odor_on)
             #reward_
             #self.determine_reward_lickUnlimited(self.duration_odor_to_action)
-            self.determine_reward_lickUnlimited(self.duration_odor_to_action, False)
-            #reward_on = self.determine_reward_lickUnlimited(self.duration_action_window, self.operant)
+            total_duration = self.duration_rec_on_before + self.duration_action_window + self.duration_water_large + self.duration_rec_on_after
+            self.determine_reward_lickUnlimited(total_duration, False)
             self.run_reward_module(True, w_code)
 
         if types == 5:
