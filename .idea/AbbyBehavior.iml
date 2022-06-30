@@ -5,6 +5,8 @@
       <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Classes" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Daq_Functions" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Classes/.idea" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Classes/Hardware" isTestSource="false" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.9 (learnpy==3.6)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

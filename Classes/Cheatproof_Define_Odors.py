@@ -14,10 +14,20 @@ class OdorGen(object):
 
     # saying that the rewarded done with be one labeled 0
     def set_rewardodor(self, index:list):
-        reward_odor = self.odors_DAQ[index[0]]
-        non_reward_odor = self.odors_DAQ[index[1]]
+
+        reward_odor1 = self.odors_DAQ[index[0]]
+        reward_odor2 = self.odors_DAQ[index[1]]
+        reward_odor3 = self.odors_DAQ[index[2]]
+
+        non_reward_odor1 = self.odors_DAQ[index[3]]
+        non_reward_odor2 = self.odors_DAQ[index[4]]
+        non_reward_odor3 = self.odors_DAQ[index[5]]
+
+
+
+
         print ('reward odor and unrewarded odor loaded')
-        return reward_odor, non_reward_odor
+        return reward_odor1, reward_odor2, reward_odor3, non_reward_odor1, non_reward_odor2, non_reward_odor3
 
     def initiate (self):
         for odor in self.odors_DAQ:
@@ -29,11 +39,6 @@ class OdorGen(object):
         for odor in self.odors_DAQ:
             odor.close()
         print ('Connection has been closed')
-
-
-
-
-
 
 
 

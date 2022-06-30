@@ -8,9 +8,8 @@ import os
 import logging
 from Daq_Functions.DAQSimpleDOTask import DAQSimpleDOTask
 from Daq_Functions.DAQSimpleDITask import DAQSimpleDITask
-from Classes.Define_Odors import OdorGen
+from Classes.Cheatproof_Define_Odors import OdorGen
 from openpyxl import Workbook
-
 
 class AbbyTraining(Measurement):
 
@@ -18,33 +17,34 @@ class AbbyTraining(Measurement):
 
     def __init__(self):
 
-        self.mouse = 'Young1'
+        self.mouse = 'S3'
 
         #self.phase='go_odor_no_delay_free20%'
+        #self.phase='free_water'
         #self.phase = 'alternating blocks go_nogo'
         #self.phase='go_odor_no_delay'
         self.phase = 'odor go_no-go_no_delay'
-        #self.phase='free_water'
+        #self.phase='cheat_go_no'
         self.condition = 'Operant'
         self.punishment = 'Punish'
         self.numtrials = 20
         self.number_of_blocks = 10
 
        # list of odors
-        #self.list = [0, 7]
-        #self.list = [0, 1]
+        self.list = [2,1,0,4,4,4] #[nogo, nogo, nogo, go, go, go] lines
+        #self.list = [5,1,0,7,6,3] #[nogo, nogo, nogo, go, go, go] lines
+        #self.list = [6,4,2,6,4,2]  # [nogo, nogo, nogo, go, go, go] lines
+        # self.list = [0, 7]
         #self.list=[0,5]
         #self.list = [0, 6]
         #self.list = [0, 4]
-        #self.list = [0, 3]
-        #self.list = [0, 2]
-        self.list = [3, 4]
         #self.list = [0, 0]
 
 
-        self.events_path = "C:/Abby Behavior Data/Pilot3/experiment_data_2022_3_{0}/{1}/".format(self.phase, self.mouse)
+        self.events_path = "C:/Abby Behavior Data/Pilot4/experiment_data_2022_3_{0}/{1}/".format(self.phase, self.mouse)
         self.events_filename = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")+'{}.xlsx'.format(self.phase)
-        self.odor_index = [1, 0] #odor list index POSITION 0 is reward,  1 is unrewarded, 2 is control odors
+        # self.odor_index = [1,0]
+        self.odor_index = [3,4,5,0,1,2] #odor list index POSITION 0 is reward,  1 is unrewarded, 2 is control odors
 
         self.allowedExtraLicks = 0
 
@@ -66,6 +66,7 @@ class AbbyTraining(Measurement):
         self.p_no_go = 0.2
         self.p_empty  = 0.4
         self.p_reward_empty = 0.75
+        self.cheat_odor = DAQSimpleDOTask('Dev3/port0/line2')
 
        # if self.phase == 'free_water':
            # self.p_reward_empty = 0
@@ -74,17 +75,17 @@ class AbbyTraining(Measurement):
 
         self.counter = np.zeros(9)
 
+        self.odor_actuate = 1.2
         self.duration_rec_on_before = 2
-        #self.duration_rec_on_before = 0
-        self.duration_odor_on = 2
+        self.duration_odor_on = 1
         self.duration_odor_to_action = 0
-        self.duration_action_window = 3
-        #self.duration_action_window = 2
-        self.duration_water_large = 0.04 #water
+        self.duration_action_window = 2
+        #self.duration_action_window = 3
+        self.duration_water_large = 0.03 #water
         #self.duration_water_large = 0.02 #milk
         self.duration_rec_on_after = 4
-        #self.duration_rec_on_after = 0
         self.duration_ITI = np.random.exponential(2, size=(self.number_of_blocks * (self.numtrials + int(round((self.numtrials) / 2)))))
+        self.duration_total = self.duration_rec_on_before + self.duration_odor_on + self.duration_odor_to_action + self.duration_action_window+self.duration_water_large+self.duration_rec_on_after
 
         self.waterline = 3
         self.filename = self.events_path + self.events_filename
@@ -101,21 +102,25 @@ class AbbyTraining(Measurement):
         logging.info(self.__dict__)
         odors_cue = OdorGen(self.list)
         odors_cue.assign_odor()
-        self.reward_odor, self.non_reward_odor, = odors_cue.set_rewardodor(index=self.odor_index)
+        self.reward_odor1, self.reward_odor2, self.reward_odor3, self.non_reward_odor1, self.non_reward_odor2, self.non_reward_odor3 = odors_cue.set_rewardodor(index=self.odor_index)
+        self.dictionary={self.reward_odor1:str(self.list[3]), self.reward_odor2:str(self.list[4]), self.reward_odor3:str(self.list[5]),
+                         self.non_reward_odor1:str(self.list[0]), self.non_reward_odor2:str(self.list[1]), self.non_reward_odor3:str(self.list[2])}
         odors_cue.initiate()
         #odors_cue.odors_DAQ[i]
         print('odor done')
-        print(self.reward_odor)
+        #print(self.reward_odor)
 
         #self.waterR = DAQSimpleDOTask('Dev1/port1/line{}'.format(self.waterline))
         self.waterR = DAQSimpleDOTask('Dev3/port1/line0') #water
-        #self.waterR = DAQSimpleDOTask('Dev3/port2/line0') #sweetened condensed milk
+        #self.waterR = DAQSimpleDOTask('Dev3/port2/line0') #milk
         self.waterR.low()
         #self.OdorOnCopy = DaqSimpleDOTask('dev/port/line')
         #self.OdorOnCopy.low()
         self.lickR = DAQSimpleDITask('Dev3/port1/line1') #water
-        #self.lickR = DAQSimpleDITask('Dev3/port1/line3') #sweetened condensed milk
+        #self.lickR = DAQSimpleDITask('Dev3/port1/line3') #milk
         print('water done')
+        self.odor_to_mouse = DAQSimpleDOTask('Dev3/port1/line2')
+        self.air_to_exhaust=  DAQSimpleDOTask('Dev3/port2/line0')
 
         #create excel workbook
         self.wb1=Workbook()
@@ -129,6 +134,7 @@ class AbbyTraining(Measurement):
 
             train_nogo = np.ones(int(round(self.numtrials * 0.5)))#code 1
             train_go = np.zeros(int(round(self.numtrials * 0.5)))#code 0
+
 
             #temp_comb1 = np.concatenate((train_go, train_nogo))
             #train_go_omission = np.ones(int(round(self.numtrials * self.p_go * (1 - self.p_reward_go)))) * 3  # code 3
@@ -146,7 +152,7 @@ class AbbyTraining(Measurement):
                 # water should be available right upon licking during odor
                 # should be self.duration_odor_to_action = 0
                 #temp_comb1 = np.ones(int(round(1)))
-                temp_comb1 = np.ones(self.numtrials)
+                temp_comb3 = np.ones(self.numtrials)
 
             elif self.phase == 'go_odor_no_delay_free20%':
                 # water should be available right upon licking during odor
@@ -169,6 +175,14 @@ class AbbyTraining(Measurement):
                 self.duration_odor_to_action = 0
                 single_block = np.concatenate((train_go, train_nogo))
                 temp_comb3 = np.tile(single_block, self.number_of_blocks)
+
+            elif self.phase == 'cheat_go_no':
+                self.duration_odor_to_action = 0
+                number_nogo = np.ones(int(round(self.numtrials * 0.425)))  # code 1
+                number_go = np.zeros(int(round(self.numtrials * 0.425)))  # code 0
+                number_cheat = np.ones(int(round(self.numtrials * .15)))*7
+                single_block =np.concatenate((number_go, number_cheat, number_nogo))
+                temp_comb3  = np.tile(single_block, self.number_of_blocks)
 
             elif self.phase == 'alternating blocks go_nogo':
                 go = np.zeros(self.numtrials)
@@ -222,11 +236,15 @@ class AbbyTraining(Measurement):
 
             self.determine_reward_lickUnlimited(self.duration_rec_on_before, True)
 
+            #self.track_licks(self.duration_total)
+
+
             self.run_trial_type(int(trialtypes[t]))
 
             self.determine_reward_lickUnlimited(self.duration_rec_on_after, True)
 
             self.determine_reward_lickUnlimited(self.duration_ITI[t], True)
+            #self.determine_reward_lickUnlimited(self.duration_ITI, True)
 
             d = self.ws1.cell(row=self.ws1.max_row, column=2, value=100)
             self.wb1.save(self.filename)
@@ -236,6 +254,26 @@ class AbbyTraining(Measurement):
         self.waterR.low()
         self.waterR.close()
         print ('FINISHED ASSOCIATION TRAINING')
+
+    def track_licks(self, action_interval):
+        checkperiod = 0.005
+        action_timeout = time.time() + action_interval
+        right_lick_last = 0
+
+
+        while time.time() < action_timeout:
+            right_lick = self.lickR.read()
+            if right_lick != right_lick_last:
+                if right_lick:
+                    print('Lick')
+                    d = self.ws1.cell(row=(self.ws1.max_row + 1), column=1, value=time.time())
+                    d = self.ws1.cell(row=self.ws1.max_row, column=2, value=11)
+                else:
+                    d = self.ws1.cell(row=(self.ws1.max_row + 1), column=1, value=time.time())
+                    d = self.ws1.cell(row=self.ws1.max_row, column=2, value=10)
+            right_lick_last = right_lick
+            time.sleep(checkperiod)
+
 
     def determine_reward_lickUnlimited(self, action_interval, check_action):
         checkperiod = 0.005
@@ -380,11 +418,27 @@ class AbbyTraining(Measurement):
             print('go_odor_no_delay'+ str(int(self.counter[types])))
             odor_on = True
             is_go = True
+            is_cheat = False
             r_code=[131, 130]
             w_code = [51, 50]
-            self.run_odor_module(odor_on, is_go, is_control, r_code)
-            reward_on = self.determine_reward_lickUnlimited(self.duration_odor_on + self.duration_action_window,  True)
+            #self.track_licks(self.duration_odor_on)
+            self.reward_on = self.determine_reward_lickUnlimited(self.duration_odor_on, True)
+            self.run_odor_module(odor_on, is_go, is_control, is_cheat, r_code)
+            #reward_on = self.determine_reward_lickUnlimited(self.duration_odor_on + self.duration_action_window,  True)
+            reward_on = self.determine_reward_lickUnlimited(self.duration_action_window, True)
             self.run_reward_module(reward_on, w_code)
+
+        elif types == 7:
+            print ('go_blank_cheat'+ str(int(self.counter[types])))
+            odor_on = True
+            is_go = False
+            is_cheat = True
+            r_code = [131, 130]
+            w_code = [51, 50]
+            self.run_odor_module(odor_on, is_go,  is_control, is_cheat, r_code)
+            reward_on = self.determine_reward_lickUnlimited(self.duration_action_window, True)
+            self.run_reward_module(reward_on, w_code)
+
 
         elif types == 4:
             print('free water no odor' + str(int(self.counter[types])))
@@ -418,14 +472,18 @@ class AbbyTraining(Measurement):
             print ('no go trial' + str(int(self.counter[types])))
             odor_on = True
             is_go = False
+            is_cheat  = False
             r_code = [141, 140]
             w_code = [61, 60]
-            self.run_odor_module(odor_on, is_go, is_control, r_code)
+            self.run_odor_module(odor_on, is_go, is_control, is_cheat, r_code)
             #self.determine_reward_lickUnlimited(self.duration_odor_to_action + self.duration_action_window, True)
             reward_on = False
-            self.run_reward_module(reward_on, w_code)
-            self.punishing_timeout(self.duration_rec_on_after + self.duration_odor_on +self.duration_rec_on_before + self.duration_action_window + self.duration_water_large, True)
+            #self.run_reward_module(reward_on, w_code)
+            #self.punishing_timeout(self.duration_rec_on_after + self.duration_odor_on +self.duration_rec_on_before + self.duration_action_window + self.duration_water_large, True)
             #self.punishing_timeout((self.duration_ITI[t], True))
+            #self.punishing_timeout(self.duration_odor_on + self.duration_action_window, True)
+            self.punishing_timeout(self.duration_action_window, True)
+
 
 
 
@@ -451,26 +509,135 @@ class AbbyTraining(Measurement):
 
 
 
-    def run_odor_module(self, odor_on, is_go, is_control, r_code):
+    def run_odor_module(self, odor_on, is_go, is_control, is_cheat, r_code):
+
         if odor_on:
-            print ('opening odor port')
-            if is_go and not is_control:
+
+            print ('actuating odor')
+            if is_go and not is_control and not is_cheat:
+                self.reward_odor = random.choice([self.reward_odor1, self.reward_odor2, self.reward_odor3])
                 self.reward_odor.high()
+                time.sleep(self.odor_actuate)
+                self.odor_to_mouse.high()
+                self.air_to_exhaust.high()
+                print('odor to mouse')
                 d = self.ws1.cell(row=(self.ws1.max_row + 1), column=1, value=time.time())
                 d = self.ws1.cell(row=self.ws1.max_row, column=2, value=r_code[0])
+
+                checkperiod = 0.005
+                action_timeout = time.time() + self.duration_odor_on
+                right_lick_last = 0
+                count = 0
+                # reward_on = True
+                while time.time() < action_timeout:
+                    right_lick = self.lickR.read()
+                    if right_lick != right_lick_last:
+                        if right_lick:
+                            print('Lick')
+                            d = self.ws1.cell(row=(self.ws1.max_row + 1), column=1, value=time.time())
+                            d = self.ws1.cell(row=self.ws1.max_row, column=2, value=11)
+
+                            # if check_action:
+                            # count += 1
+                        else:
+                            d = self.ws1.cell(row=(self.ws1.max_row + 1), column=1, value=time.time())
+                            d = self.ws1.cell(row=self.ws1.max_row, column=2, value=10)
+                    else:
+                        pass
+                    right_lick_last = right_lick
+                    time.sleep(checkperiod)
+
                 time.sleep(self.duration_odor_on)
                 self.reward_odor.low()
+                self.odor_to_mouse.low()
+                self.air_to_exhaust.low()
                 print('closing odor port')
+                print('used odor line ',self.dictionary[self.reward_odor])
                 d = self.ws1.cell(row=(self.ws1.max_row + 1), column=1, value=time.time())
                 d = self.ws1.cell(row=self.ws1.max_row, column=2, value=r_code[1])
 
-            elif not is_go and not is_control:
-                self.non_reward_odor.high()
+            elif is_cheat:
+                #self.reward_odor = self.cheat_odor
+                self.cheat_odor.high()
+                time.sleep(self.odor_actuate)
+                self.odor_to_mouse.high()
+                self.air_to_exhaust.high()
+                print('odor to mouse')
                 d = self.ws1.cell(row=(self.ws1.max_row + 1), column=1, value=time.time())
                 d = self.ws1.cell(row=self.ws1.max_row, column=2, value=r_code[0])
+
+                checkperiod = 0.005
+                action_timeout = time.time() + self.duration_odor_on
+                right_lick_last = 0
+                count = 0
+                # reward_on = True
+                while time.time() < action_timeout:
+                    right_lick = self.lickR.read()
+                    if right_lick != right_lick_last:
+                        if right_lick:
+                            print('Lick')
+                            d = self.ws1.cell(row=(self.ws1.max_row + 1), column=1, value=time.time())
+                            d = self.ws1.cell(row=self.ws1.max_row, column=2, value=11)
+
+                            # if check_action:
+                            # count += 1
+                        else:
+                            d = self.ws1.cell(row=(self.ws1.max_row + 1), column=1, value=time.time())
+                            d = self.ws1.cell(row=self.ws1.max_row, column=2, value=10)
+                    else:
+                        pass
+                    right_lick_last = right_lick
+                    time.sleep(checkperiod)
+
+                time.sleep(self.duration_odor_on)
+                self.cheat_odor.low()
+                self.odor_to_mouse.low()
+                self.air_to_exhaust.low()
+                #print ('used odor line',self.cheat_odor)
+                print('closing odor port')
+
+                d = self.ws1.cell(row=(self.ws1.max_row + 1), column=1, value=time.time())
+                d = self.ws1.cell(row=self.ws1.max_row, column=2, value=r_code[1])
+
+
+            elif not is_go and not is_control and not is_cheat:
+                self.non_reward_odor = random.choice([self.non_reward_odor1, self.non_reward_odor2, self.non_reward_odor3])
+                self.non_reward_odor.high()
+                time.sleep(self.odor_actuate)
+                self.odor_to_mouse.high()
+                print ('odor to mouse')
+                d = self.ws1.cell(row=(self.ws1.max_row + 1), column=1, value=time.time())
+                d = self.ws1.cell(row=self.ws1.max_row, column=2, value=r_code[0])
+
+                checkperiod = 0.005
+                action_timeout = time.time() + self.duration_odor_on
+                right_lick_last = 0
+                count = 0
+                # reward_on = True
+                while time.time() < action_timeout:
+                    right_lick = self.lickR.read()
+                    if right_lick != right_lick_last:
+                        if right_lick:
+                            print('Lick')
+                            d = self.ws1.cell(row=(self.ws1.max_row + 1), column=1, value=time.time())
+                            d = self.ws1.cell(row=self.ws1.max_row, column=2, value=11)
+
+                            # if check_action:
+                            # count += 1
+                        else:
+                            d = self.ws1.cell(row=(self.ws1.max_row + 1), column=1, value=time.time())
+                            d = self.ws1.cell(row=self.ws1.max_row, column=2, value=10)
+                    else:
+                        pass
+                    right_lick_last = right_lick
+                    time.sleep(checkperiod)
+
                 time.sleep(self.duration_odor_on)
                 self.non_reward_odor.low()
+                self.odor_to_mouse.low()
+                self.air_to_exhaust.low()
                 print('closing odor port')
+                print('used odor line ',self.dictionary[self.non_reward_odor])
                 d=self.ws1.cell(row=(self.ws1.max_row + 1), column=1, value=time.time())
                 d=self.ws1.cell(row=self.ws1.max_row, column = 2, value=r_code[1])
         else:
@@ -498,6 +665,3 @@ class AbbyTraining(Measurement):
 test = AbbyTraining()
 print('start')
 test.run()
-
-
-

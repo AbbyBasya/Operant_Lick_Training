@@ -23,3 +23,4 @@ d = self.ws1.cell(row=(self.ws1.max_row + 1), column=1, value=time.time())
 d = self.ws1.cell(row=self.ws1.max_row, column=2, value=w_code[1])
 
 # water triggered by licking
+#test
